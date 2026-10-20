@@ -35,4 +35,4 @@ Non-goals: communication across processes, message persistence, JetStream.
 
 ## Example
 
-`example/` is a hybrid app whose vertical slices (`orders`, `inventory`, `notifications`, one module each) only talk through the microservice client, using each other's `*.contract.ts`. All transport-specific code lives in `example/messaging.ts`. Run it with `npm run example:memory` or `npm run example:nats` (starts NATS via Testcontainers); `example/example.test.ts` smoke-tests both, so keep it working when the API changes. It imports `nestjs-nats-memory` by name, which the `development` export condition resolves to `src/` (no build needed).
+`example/` is a hybrid app whose vertical slices (`orders`, `inventory`, `notifications`, one module each) only talk through the microservice client, using each other's `*.contract.ts`. All transport-specific code lives in `example/messaging.ts`. Run it with `npm run example:memory` or `npm run example:nats` (starts NATS via Testcontainers); `example/example.test.ts` smoke-tests both, so keep it working when the API changes. It imports the package through a relative import of `src/index.ts` (no build needed).

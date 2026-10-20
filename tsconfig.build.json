@@ -4,6 +4,7 @@
     "compilerOptions": {
         "noEmit": false,
         "rootDir": "./src",
-        "declaration": true
+        "declaration": true,
+        "declarationMap": true
     }
 }

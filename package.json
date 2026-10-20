@@ -2,10 +2,24 @@
   "name": "nestjs-nats-memory",
   "version": "0.0.1",
   "description": "In-memory drop-in replacement for the NATS transport of NestJS microservices.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "nats",
+    "microservices",
+    "transport",
+    "in-memory",
+    "testing",
+    "monolith"
+  ],
+  "homepage": "https://github.com/pigulla/nestjs-nats-memory#readme",
   "bugs": {
     "url": "https://github.com/pigulla/nestjs-nats-memory/issues"
   },
-  "repository": "github:pigulla/nestjs-nats-memory",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pigulla/nestjs-nats-memory.git"
+  },
   "license": "ISC",
   "author": {
     "name": "Raphael Pigulla",
@@ -16,21 +30,23 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "development": "./src/index.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src",
+    "!src/**/*.test.ts"
   ],
   "scripts": {
     "audit": "npm audit --omit dev",
     "build": "rm -rf dist && tsc --project tsconfig.build.json",
     "example:build": "rm -rf dist && tsc --project tsconfig.example.json",
-    "example:memory": "node --disable-warning=DEP0205 --conditions=development --import jiti/register example/index.memory.ts",
-    "example:nats": "node --disable-warning=DEP0205 --conditions=development --import jiti/register example/index.nats.ts",
+    "example:memory": "node --disable-warning=DEP0205 --import jiti/register example/index.memory.ts",
+    "example:nats": "node --disable-warning=DEP0205 --import jiti/register example/index.nats.ts",
     "format": "npm run format:biome && npm run format:package-json && npm run format:markdown",
     "format:biome": "biome check --write",
     "format:markdown": "prettier --write .",
@@ -42,7 +58,8 @@
     "lint:markdown": "prettier --check .",
     "lint:package-json": "npmPkgJsonLint . && sort-package-json --check",
     "lint:tsc": "tsc --project tsconfig.test.json",
-    "prepublishOnly": "npm ci && rm -rf coverage dist && npm test && npm run build",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run lint",
     "test": "npm run lint && npm run vitest",
     "vitest": "vitest run",
     "vitest:example": "vitest run example",
@@ -79,13 +96,17 @@
     "vitest": "5.0.5"
   },
   "peerDependencies": {
-    "@nats-io/transport-node": "3.x",
-    "@nestjs/common": "12.x",
-    "@nestjs/core": "12.x",
-    "@nestjs/microservices": "12.x",
-    "rxjs": "7.x"
+    "@nats-io/transport-node": "^3.0.0",
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/core": "^12.0.0",
+    "@nestjs/microservices": "^12.0.0",
+    "reflect-metadata": "^0.1.12 || ^0.2.0",
+    "rxjs": "^7.1.0"
   },
   "engines": {
     "node": ">=22.12"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

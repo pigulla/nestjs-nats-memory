@@ -4,7 +4,6 @@
     "exclude": ["**/*.test.ts"],
     "compilerOptions": {
         "noEmit": false,
-        "sourceMap": true,
-        "customConditions": ["development"]
+        "sourceMap": true
     }
 }

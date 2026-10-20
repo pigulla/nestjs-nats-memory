@@ -10,7 +10,9 @@ Use it to [start with a monolith](https://martinfowler.com/bliki/MonolithFirst.h
 npm install nestjs-nats-memory
 ```
 
-Peer dependencies: `@nestjs/common`, `@nestjs/core` and `@nestjs/microservices` 12.x, `@nats-io/transport-node` 3.x and `rxjs` 7.x.
+Peer dependencies: `@nestjs/common`, `@nestjs/core` and `@nestjs/microservices` 12.x, `@nats-io/transport-node` 3.x, `reflect-metadata` and `rxjs` 7.x.
+
+The package is ESM-only. CommonJS applications can still `require()` it on the supported Node versions (≥ 22.12), but test runners with their own CommonJS module system, such as Jest, need to be configured for ESM.
 
 ## Usage
 

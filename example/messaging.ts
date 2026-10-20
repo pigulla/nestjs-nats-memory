@@ -9,12 +9,13 @@ import {
   type MicroserviceOptions,
   Transport,
 } from '@nestjs/microservices'
+
 import {
   NatsInMemoryBus,
   NatsInMemoryClientProxy,
   NatsInMemoryModule,
   NatsInMemoryServer,
-} from 'nestjs-nats-memory'
+} from '../src/index.js'
 
 /** The injection token of the client the slices use to send requests and emit events. */
 export const MESSAGING_CLIENT = 'MESSAGING_CLIENT'
