@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  NODE_ENV: ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      tests-failed: ${{ steps.vitest.outcome == 'failure' }}
+
+    steps:
+      - run: docker pull --quiet nats:latest
+
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+      - name: Run tests with coverage
+        id: vitest
+        continue-on-error: true
+        run: npm run vitest:with-coverage
+
+      - name: Stage docs for Pages
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p pages
+          cp -r coverage/. pages
+
+      - name: Add build marker
+        if: github.ref == 'refs/heads/main'
+        run: |
+          node -e '
+            const fs = require("fs");
+            const shortSha = process.env.GITHUB_SHA.slice(0, 7);
+            const built = new Date().toISOString().replace("T", " ").slice(0, 16);
+            const marker = `<div style="position:fixed;bottom:0;left:0;right:0;padding:4px 8px;font:12px monospace;background:#222;color:#eee;z-index:9999">Built ${built} UTC · commit <a href="https://github.com/${process.env.GITHUB_REPOSITORY}/commit/${process.env.GITHUB_SHA}" style="color:#9cf">${shortSha}</a></div>`;
+            const html = fs.readFileSync("pages/index.html", "utf8");
+            fs.writeFileSync("pages/index.html", html.split("</body>").join(marker + "</body>"));
+          '
+
+      - uses: actions/configure-pages@v6
+        if: github.ref == 'refs/heads/main'
+
+      - uses: actions/upload-pages-artifact@v5
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: pages
+
+      - name: Fail job if tests failed
+        if: steps.vitest.outcome == 'failure'
+        run: exit 1
+
+  deploy:
+    needs: build
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      (needs.build.result == 'success' || needs.build.outputs.tests-failed == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,12 @@
+{
+    "extends": ["@tsconfig/node22/tsconfig.json", "@tsconfig/node-ts/tsconfig.json"],
+    "include": ["src/**/*.ts"],
+    "compilerOptions": {
+        "noEmit": true,
+        "rootDir": ".",
+        "outDir": "./dist",
+        "moduleResolution": "nodenext",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true
+    }
+}

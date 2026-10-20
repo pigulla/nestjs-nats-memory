@@ -1,0 +1,4 @@
+# Prettier only formats markdown in this project (Biome handles everything else)
+*
+!*.md
+!*/

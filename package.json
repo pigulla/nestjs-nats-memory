@@ -1,0 +1,91 @@
+{
+  "name": "nestjs-nats-memory",
+  "version": "0.0.1",
+  "description": "In-memory drop-in replacement for the NATS transport of NestJS microservices.",
+  "bugs": {
+    "url": "https://github.com/pigulla/nestjs-nats-memory/issues"
+  },
+  "repository": "github:pigulla/nestjs-nats-memory",
+  "license": "ISC",
+  "author": {
+    "name": "Raphael Pigulla",
+    "email": "raphael@pigul.la",
+    "url": "https://www.linkedin.com/in/pigulla"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "audit": "npm audit --omit dev",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "example:build": "rm -rf dist && tsc --project tsconfig.example.json",
+    "example:memory": "node --disable-warning=DEP0205 --conditions=development --import jiti/register example/index.memory.ts",
+    "example:nats": "node --disable-warning=DEP0205 --conditions=development --import jiti/register example/index.nats.ts",
+    "format": "npm run format:biome && npm run format:package-json && npm run format:markdown",
+    "format:biome": "biome check --write",
+    "format:markdown": "prettier --write .",
+    "format:package-json": "sort-package-json",
+    "lint": "npm run lint:tsc && npm run lint:markdown && npm run lint:biome && npm run lint:knip && npm run lint:lockfile && npm run lint:package-json",
+    "lint:biome": "biome check",
+    "lint:knip": "knip",
+    "lint:lockfile": "lockfile-lint",
+    "lint:markdown": "prettier --check .",
+    "lint:package-json": "npmPkgJsonLint . && sort-package-json --check",
+    "lint:tsc": "tsc --project tsconfig.test.json",
+    "prepublishOnly": "npm ci && rm -rf coverage dist && npm test && npm run build",
+    "test": "npm run lint && npm run vitest",
+    "vitest": "vitest run",
+    "vitest:example": "vitest run example",
+    "vitest:integration": "vitest run test",
+    "vitest:unit": "vitest run src",
+    "vitest:with-coverage": "vitest run --coverage"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@nestjs/platform-express": "12.2.0",
+    "@nestjs/testing": "12.2.0",
+    "@swc/core": "1.16.18",
+    "@tsconfig/node-ts": "23.6.4",
+    "@tsconfig/node22": "22.0.6",
+    "@types/node": "22.20.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "cz-conventional-changelog": "3.3.0",
+    "jiti": "2.7.0",
+    "knip": "6.42.1",
+    "lockfile-lint": "5.1.0",
+    "npm-package-json-lint": "11.0.0",
+    "npm-package-json-lint-config-default": "10.0.0",
+    "prettier": "3.9.10",
+    "sort-package-json": "4.1.0",
+    "testcontainers": "12.2.1",
+    "typescript": "7.0.2",
+    "unplugin-swc": "2.0.0",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  },
+  "peerDependencies": {
+    "@nats-io/transport-node": "3.x",
+    "@nestjs/common": "12.x",
+    "@nestjs/core": "12.x",
+    "@nestjs/microservices": "12.x",
+    "rxjs": "7.x"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
