@@ -33,6 +33,14 @@ class ShoutingSerializer extends NatsRecordSerializer {
   }
 }
 
+/** Encodes packets as bytes instead of a string, like a binary serializer (e.g. MessagePack) would. */
+class BinarySerializer extends NatsRecordSerializer {
+  public override serialize(packet: Packet): ReturnType<NatsRecordSerializer['serialize']> {
+    const serialized = super.serialize(packet)
+    return { ...serialized, data: new TextEncoder().encode(serialized.data as string) }
+  }
+}
+
 class InitializableSerializer extends NatsRecordSerializer {
   public initialized = false
 
@@ -115,6 +123,17 @@ describe.each(transports)('serialization ($name)', transport => {
     const reply = await parity.send('serialization.echo', 'hello')
 
     expect(reply).toBe('olleh')
+  })
+
+  it('sends a request encoded as bytes by a custom serializer', async () => {
+    const parity = await transport.createApp({
+      controllers: [SerializationController],
+      clientOptions: { serializer: new BinarySerializer() },
+    })
+
+    const reply = await parity.send('serialization.echo', 'hello')
+
+    expect(reply).toBe('hello')
   })
 
   it('initializes a custom client serializer when connecting', async () => {

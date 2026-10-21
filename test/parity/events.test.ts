@@ -63,6 +63,17 @@ describe.each(transports)('events ($name)', transport => {
     ])
   })
 
+  it('delivers events in the order they were emitted', async () => {
+    const payloads = Array.from({ length: 100 }, (_, index) => index)
+
+    await Promise.all(payloads.map(payload => parity.emit('events.created', payload)))
+    await settle()
+
+    expect(
+      received.filter(([handler]) => handler === 'first').map(([, payload]) => payload),
+    ).toEqual(payloads)
+  })
+
   it('runs a message handler for an event', async () => {
     await parity.emit('events.to-message-handler', 'payload')
     await settle()

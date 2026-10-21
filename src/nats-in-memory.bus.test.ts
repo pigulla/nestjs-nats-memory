@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import { matchesSubject } from './nats-in-memory.bus.js'
+import { type InMemoryMessage, matchesSubject, NatsInMemoryBus } from './nats-in-memory.bus.js'
+
+describe('NatsInMemoryBus', () => {
+  it('does not deliver a message to a subscription that ended before the message arrived', async () => {
+    const bus = new NatsInMemoryBus()
+    const received: InMemoryMessage[] = []
+    const unsubscribe = bus.subscribe('a', undefined, message => received.push(message))
+    bus.publish({ subject: 'a', data: new Uint8Array() })
+
+    unsubscribe()
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(received).toEqual([])
+  })
+})
 
 describe('matchesSubject', () => {
   it.each([

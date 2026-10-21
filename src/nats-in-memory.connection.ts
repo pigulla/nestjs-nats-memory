@@ -2,7 +2,8 @@
  * A connection to the NatsInMemoryBus, implementing the part of NatsConnection (and Msg) that Nest's ServerNats and
  * ClientNats use: `subscribe` (with `callback` and `queue`), `publish` (with `reply` and `headers`), `status()`,
  * `flush()` and `close()`. Like the NATS client, it encodes what it publishes and refuses invalid subjects and
- * payloads larger than `max_payload` (see nats-in-memory.limits.ts).
+ * payloads larger than `max_payload` (see nats-in-memory.limits.ts). Any other member of NatsConnection or
+ * Subscription throws a NatsInMemoryUnsupportedFeatureError, e.g. if a newer Nest version starts to use `drain()`.
  *
  * Unlike a connection to a NATS server, it cannot be lost: it never reports `disconnect`, `reconnect` or `update`
  * statuses (documented in the README).
@@ -11,6 +12,7 @@ import {
   ClosedConnectionError,
   type Msg,
   MsgHdrsImpl,
+  type NatsConnection,
   type Payload,
   ProtocolError,
   type PublishOptions,
@@ -24,11 +26,61 @@ import {
   assertWithinMaxPayload,
   isValidSubscriptionSubject,
 } from './nats-in-memory.limits.js'
+import { NatsInMemoryUnsupportedFeatureError } from './nats-in-memory-unsupported-feature.error.js'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-export class NatsInMemoryConnection {
+// The members of the nats.js interfaces that the in-memory classes stand in for, see withUnsupportedMembers.
+const NATS_CONNECTION_MEMBERS = [
+  'info',
+  'closed',
+  'close',
+  'publish',
+  'publishMessage',
+  'respondMessage',
+  'subscribe',
+  'request',
+  'requestMany',
+  'flush',
+  'drain',
+  'isClosed',
+  'isDraining',
+  'getServer',
+  'status',
+  'stats',
+  'rtt',
+  'reconnect',
+  'setServers',
+  'getServers',
+]
+const SUBSCRIPTION_MEMBERS = [
+  'closed',
+  'unsubscribe',
+  'drain',
+  'isDraining',
+  'isClosed',
+  'callback',
+  'getSubject',
+  'getReceived',
+  'getProcessed',
+  'getPending',
+  'getID',
+  'getMax',
+  Symbol.asyncIterator,
+]
+
+/** Opens a connection to the bus, see NatsInMemoryConnection. */
+export function createConnection(bus: NatsInMemoryBus): NatsConnection {
+  const connection = new NatsInMemoryConnection(bus)
+  return withUnsupportedMembers(
+    connection,
+    'NatsConnection',
+    NATS_CONNECTION_MEMBERS,
+  ) as unknown as NatsConnection
+}
+
+class NatsInMemoryConnection {
   private readonly bus: NatsInMemoryBus
   private readonly unsubscribers = new Set<() => void>()
   private readonly statuses: Status[] = []
@@ -49,7 +101,7 @@ export class NatsInMemoryConnection {
     }
     // Copied, so that later changes by the publisher do not leak through, like on the wire.
     const data = typeof payload === 'string' ? encoder.encode(payload) : payload.slice()
-    const headers = options.headers ? (options.headers as MsgHdrsImpl).encode() : undefined
+    const headers = (options.headers as MsgHdrsImpl | undefined)?.encode()
     assertWithinMaxPayload(data.length + (headers?.length ?? 0))
 
     this.bus.publish({ subject, reply: options.reply || undefined, data, headers })
@@ -61,7 +113,7 @@ export class NatsInMemoryConnection {
       // The NATS server answers such a SUB with an error, which the client reports as a status, and the subscription
       // never receives a message.
       this.pushStatus({ type: 'error', error: new ProtocolError('Invalid Subject') })
-      return { unsubscribe: () => {} }
+      return withUnsupportedMembers({ unsubscribe: () => {} }, 'Subscription', SUBSCRIPTION_MEMBERS)
     }
 
     const sid = this.nextSid++
@@ -69,19 +121,18 @@ export class NatsInMemoryConnection {
       options.callback?.(null, new InMemoryMsg(this, sid, message))
     })
     this.unsubscribers.add(unsubscribe)
-    return {
+    const subscription = {
       unsubscribe: () => {
         this.unsubscribers.delete(unsubscribe)
         unsubscribe()
       },
     }
+    return withUnsupportedMembers(subscription, 'Subscription', SUBSCRIPTION_MEMBERS)
   }
 
   public async *status(): AsyncGenerator<Status> {
-    let endIteration: () => void = () => {}
-    this.statusIteration = new Promise(resolve => {
-      endIteration = resolve
-    })
+    const { promise, resolve: endIteration } = Promise.withResolvers<void>()
+    this.statusIteration = promise
     try {
       while (true) {
         const status = this.statuses.shift()
@@ -170,4 +221,26 @@ class InMemoryMsg implements Msg {
   public string(): string {
     return decoder.decode(this.data)
   }
+}
+
+/**
+ * Makes `target` throw a NatsInMemoryUnsupportedFeatureError when a member of the nats.js interface it stands in for
+ * (`type`, with the given `members`) is used but not implemented, instead of failing with "… is not a function".
+ */
+function withUnsupportedMembers<T extends object>(
+  target: T,
+  type: string,
+  members: ReadonlyArray<string | symbol>,
+): T {
+  return new Proxy(target, {
+    get(object, property, receiver) {
+      if (!(property in object) && members.includes(property)) {
+        throw new NatsInMemoryUnsupportedFeatureError(
+          `${type}#${String(property)}`,
+          "the in-memory transport only implements what Nest's NATS transport uses",
+        )
+      }
+      return Reflect.get(object, property, receiver)
+    },
+  })
 }

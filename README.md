@@ -30,7 +30,10 @@ import { NatsInMemoryBus, NatsInMemoryClientProxy, NatsInMemoryModule } from "ne
             {
                 name: "ORDERS_SERVICE", // was: { name: "ORDERS_SERVICE", transport: Transport.NATS }
                 inject: [NatsInMemoryBus],
-                useFactory: (bus: NatsInMemoryBus) => ({ customClass: NatsInMemoryClientProxy, options: { bus } }),
+                useFactory: (bus: NatsInMemoryBus) => ({
+                    customClass: NatsInMemoryClientProxy,
+                    options: { bus },
+                }),
             },
         ]),
     ],
@@ -71,7 +74,7 @@ Server and client accept the options of the NATS transport next to `bus`, e.g. `
 | `unwrap()`                                                                        | Unsupported |
 | JetStream                                                                         | Unsupported |
 
-Unsupported features throw a `NatsInMemoryUnsupportedFeatureError`: there is no NATS connection for `unwrap()` to return or JetStream to use.
+Unsupported features throw a `NatsInMemoryUnsupportedFeatureError`: there is no NATS connection for `unwrap()` to return or JetStream to use. The in-memory connection only implements the part of the NATS connection that Nest uses; should a newer Nest version use more of it, the missing parts throw a `NatsInMemoryUnsupportedFeatureError` too.
 
 ### Differences from NATS
 

@@ -2,7 +2,7 @@
  * Features the in-memory transport does not support: they work with NATS, and the in-memory transport must fail with
  * a NatsInMemoryUnsupportedFeatureError.
  */
-import { Controller } from '@nestjs/common'
+import { Controller, type INestMicroservice } from '@nestjs/common'
 import { MessagePattern } from '@nestjs/microservices'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -22,6 +22,20 @@ describe.each(transports)('unsupported features ($name)', transport => {
 
   beforeEach(async () => {
     parity = await transport.createApp({ controllers: [UnsupportedController] })
+  })
+
+  describe('unwrap() of the server', () => {
+    it.runIf(!inMemory)('returns the NATS connection', () => {
+      const connection = (parity.app as INestMicroservice).unwrap()
+
+      expect(connection).toHaveProperty('publish', expect.any(Function))
+    })
+
+    it.runIf(inMemory)('throws a NatsInMemoryUnsupportedFeatureError', () => {
+      const unwrap = (): unknown => (parity.app as INestMicroservice).unwrap()
+
+      expect(unwrap).toThrow(NatsInMemoryUnsupportedFeatureError)
+    })
   })
 
   describe('unwrap()', () => {

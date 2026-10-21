@@ -12,7 +12,7 @@
  */
 import { MsgHdrsImpl, type NatsConnection } from '@nats-io/transport-node'
 
-import { NatsInMemoryConnection } from './nats-in-memory.connection.js'
+import { createConnection } from './nats-in-memory.connection.js'
 
 /** A message as it travels through the bus: encoded like on the wire. */
 export type InMemoryMessage = {
@@ -35,7 +35,7 @@ export class NatsInMemoryBus {
    * NatsInMemoryConnection.
    */
   public connect(): NatsConnection {
-    return new NatsInMemoryConnection(this) as unknown as NatsConnection
+    return createConnection(this)
   }
 
   /** `subject` may contain the wildcards `*` and `>`; it must be a valid subscription subject. */
@@ -59,8 +59,14 @@ export class NatsInMemoryBus {
       this.publish({ subject: message.reply, data: new Uint8Array(), headers: NO_RESPONDERS })
       return
     }
-    for (const { deliver } of pickReceivers(subscribers)) {
-      setImmediate(() => deliver(message))
+    for (const subscription of pickReceivers(subscribers)) {
+      setImmediate(() => {
+        // Like nats.js, a subscription that ended (unsubscribed, or its connection closed) before the message arrived
+        // does not receive it.
+        if (this.subscriptions.has(subscription)) {
+          subscription.deliver(message)
+        }
+      })
     }
   }
 }
