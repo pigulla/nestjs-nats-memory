@@ -4,6 +4,10 @@ An in-memory drop-in replacement for the [NATS transport](https://docs.nestjs.co
 
 Use it to [start with a monolith](https://martinfowler.com/bliki/MonolithFirst.html) whose modules already talk through NATS: splitting off a microservice later only means switching the transport back. It also works as a lightweight stand-in for NATS in tests and local development.
 
+<!-- prettier-ignore -->
+> [!NOTE]
+> This project was implemented mostly using AI. It is tested against a real NATS server, but should still be considered experimental. Feedback, bug reports and contributions are welcome via [GitHub issues](https://github.com/pigulla/nestjs-nats-memory/issues).
+
 ## Installation
 
 ```shell

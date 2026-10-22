@@ -1,6 +1,6 @@
 {
     "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
-    "entry": ["example/index.*.ts"],
+    "entry": ["src/index.ts", "example/index.*.ts"],
     "project": ["src/**/*.ts", "test/**/*.ts", "example/**/*.ts"],
     "ignoreDependencies": ["cz-conventional-changelog"]
 }

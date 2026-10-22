@@ -1,6 +1,6 @@
 # Agent Guide
 
-This package is an in-memory, API-compatible replacement for the [NATS transport](https://github.com/nestjs/nest/blob/master/packages/microservices/server/server-nats.ts) of NestJS microservices: application code must not be able to tell it from real NATS. The [README](./README.md) covers usage, the feature table and the documented differences; keep it current with every change. It serves production monoliths and tests equally, so it must be both robust (no leaks, clean shutdown) and faithful to NATS, including edge cases.
+This package is an in-memory, API-compatible replacement for the [NATS transport](https://github.com/nestjs/nest/blob/master/packages/microservices/server/server-nats.ts) of NestJS microservices: application code must not be able to tell it from real NATS. The [README](./README.md) covers usage, the feature table and the documented differences; keep it current with every change. Record every user-facing change under `Unreleased` in the [CHANGELOG](./CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)). It serves production monoliths and tests equally, so it must be both robust (no leaks, clean shutdown) and faithful to NATS, including edge cases.
 
 ## The Golden Rule
 
