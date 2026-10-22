@@ -1,4 +1,5 @@
 import type { NatsConnection } from '@nats-io/transport-node'
+import type { OnApplicationShutdown } from '@nestjs/common'
 import { ClientNats, type NatsOptions } from '@nestjs/microservices'
 
 import type { NatsInMemoryBus } from './nats-in-memory.bus.js'
@@ -15,8 +16,12 @@ type Initializable = { init?: () => Promise<void> | void }
 /**
  * Nest's NATS client, connected to an NatsInMemoryBus instead of a NATS server: everything else (serialization, headers,
  * reply handling, …) is ClientNats' own behavior.
+ *
+ * Unlike ClientNats, it closes itself when the application shuts down, also when it was not created by ClientsModule
+ * (which does the same for the clients it creates), e.g. when it replaces a NATS client through
+ * `overrideProvider(…).useFactory(…)` in a test.
  */
-export class NatsInMemoryClientProxy extends ClientNats {
+export class NatsInMemoryClientProxy extends ClientNats implements OnApplicationShutdown {
   private readonly bus: NatsInMemoryBus
 
   public constructor({ bus, ...options }: NatsInMemoryClientOptions) {
@@ -30,6 +35,10 @@ export class NatsInMemoryClientProxy extends ClientNats {
     await (this.serializer as Initializable).init?.()
     await (this.deserializer as Initializable).init?.()
     return this.bus.connect()
+  }
+
+  public onApplicationShutdown(): Promise<void> {
+    return this.close()
   }
 
   public override unwrap<T>(): T {

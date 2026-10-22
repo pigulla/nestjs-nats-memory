@@ -1,8 +1,11 @@
-import { Controller, type INestMicroservice } from '@nestjs/common'
+import { Controller, type INestApplication, type INestMicroservice } from '@nestjs/common'
 import { type ClientNats, MessagePattern } from '@nestjs/microservices'
 import { EmptyResponseException } from '@nestjs/microservices/errors/empty-response.exception.js'
+import { Test } from '@nestjs/testing'
 import { firstValueFrom } from 'rxjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { NatsInMemoryBus, NatsInMemoryClientProxy, NatsInMemoryModule } from '../../src/index.js'
 
 import { delay, type ParityApp, settle, transports } from './transports.js'
 
@@ -105,5 +108,37 @@ describe.each(transports)('lifecycle ($name)', transport => {
 
       expect(parity.logged('error')).toEqual([])
     })
+  })
+})
+
+// A deliberate difference: ClientsModule closes the clients it creates on shutdown, but a ClientNats created otherwise
+// (e.g. through overrideProvider) stays connected. The in-memory client always closes itself.
+describe('lifecycle (in-memory only)', () => {
+  let app: INestApplication
+  let client: NatsInMemoryClientProxy
+
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [NatsInMemoryModule.forRoot()],
+      providers: [
+        {
+          provide: 'LIFECYCLE_CLIENT',
+          inject: [NatsInMemoryBus],
+          useFactory: (bus: NatsInMemoryBus) => new NatsInMemoryClientProxy({ bus }),
+        },
+      ],
+    }).compile()
+    app = await moduleRef.createNestApplication().init()
+    client = app.get('LIFECYCLE_CLIENT')
+    await client.connect()
+    return () => app.close()
+  })
+
+  it('closes a client not created by ClientsModule when the application shuts down', async () => {
+    const close = vi.spyOn(client, 'close')
+
+    await app.close()
+
+    expect(close).toHaveBeenCalledOnce()
   })
 })
