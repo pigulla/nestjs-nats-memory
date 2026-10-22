@@ -1,6 +1,6 @@
 {
   "name": "nestjs-nats-memory",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "In-memory drop-in replacement for the NATS transport of NestJS microservices.",
   "keywords": [
     "nestjs",
@@ -37,6 +37,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
+    "CHANGELOG.md",
     "dist",
     "src",
     "!src/**/*.test.ts"
@@ -51,8 +52,9 @@
     "format:biome": "biome check --write",
     "format:markdown": "prettier --write .",
     "format:package-json": "sort-package-json",
-    "lint": "npm run lint:tsc && npm run lint:markdown && npm run lint:biome && npm run lint:knip && npm run lint:lockfile && npm run lint:package-json",
+    "lint": "npm run lint:tsc && npm run lint:markdown && npm run lint:biome && npm run lint:changelog && npm run lint:knip && npm run lint:lockfile && npm run lint:package-json",
     "lint:biome": "biome check",
+    "lint:changelog": "kacl lint",
     "lint:knip": "knip",
     "lint:lockfile": "lockfile-lint",
     "lint:markdown": "prettier --check .",
@@ -74,6 +76,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.2",
+    "@brightcove/kacl": "0.1.11",
     "@nestjs/platform-express": "12.2.0",
     "@nestjs/testing": "12.2.0",
     "@swc/core": "1.16.18",
