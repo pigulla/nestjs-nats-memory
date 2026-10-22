@@ -58,6 +58,32 @@ app.connectMicroservice<AsyncMicroserviceOptions>(serverOptions);
 
 Server and client accept the options of the NATS transport next to `bus`, e.g. `new NatsInMemoryServer({ bus, queue: "orders", gracefulShutdown: true })`.
 
+### Testing
+
+To test an application that uses NATS in production without a NATS server, keep its modules as they are and swap the transport in the test: replace each NATS client with an in-memory one and connect an in-memory microservice instead of the NATS one.
+
+```typescript
+const moduleRef = await Test.createTestingModule({
+    imports: [AppModule, NatsInMemoryModule.forRoot()],
+})
+    .overrideProvider("ORDERS_SERVICE")
+    .useFactory({
+        inject: [NatsInMemoryBus],
+        factory: (bus: NatsInMemoryBus) => new NatsInMemoryClientProxy({ bus }),
+    })
+    .compile();
+
+const app = moduleRef.createNestApplication();
+app.connectMicroservice<AsyncMicroserviceOptions>({
+    inject: [NatsInMemoryBus],
+    useFactory: (bus: NatsInMemoryBus) => ({ strategy: new NatsInMemoryServer({ bus }) }),
+});
+await app.startAllMicroservices();
+await app.init();
+```
+
+The NATS client registered by `AppModule` is never connected. Unlike a `ClientNats` created this way, the in-memory client closes itself when the application shuts down. See [`example/app.integration.test.ts`](./example/app.integration.test.ts) for a complete example.
+
 ## Features
 
 `NatsInMemoryServer` and `NatsInMemoryClientProxy` extend Nest's own `ServerNats` and `ClientNats` and only replace their connection to the NATS server, so everything Nest's NATS transport does works the same way. Every feature is tested against both a real NATS server and the in-memory transport.
@@ -81,6 +107,7 @@ Unsupported features throw a `NatsInMemoryUnsupportedFeatureError`: there is no 
 - **Connection options are ignored**, with a logged warning: everything except the options Nest reads itself (`queue`, `serializer`, `deserializer`, `gracefulShutdown`, `gracePeriod` on the server; `headers`, `inboxPrefix`, `serializer`, `deserializer` on the client).
 - **The payload limit is always 1 MiB**, the default `max_payload` of a NATS server, which may be configured differently.
 - **There are no connection status events**: `disconnect`, `reconnect` and `update` never happen, and `status` stays `connected`.
+- **Clients close themselves on application shutdown**, even when not created by `ClientsModule` (which closes the clients it creates), e.g. when replacing a NATS client through `overrideProvider` in a test.
 - **Messages never leave the process**: only the server and clients of the same application reach each other.
 
 ## Example

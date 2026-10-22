@@ -50,7 +50,7 @@ curl -X POST localhost:3000/orders -H 'content-type: application/json' -d '{"pro
 curl localhost:3000/notifications
 ```
 
-The example imports this package from its sources (`../src/index.js`), so no build is needed; a real application imports it from `nestjs-nats-memory`. [`example.test.ts`](./example.test.ts) runs the same flow against both transports.
+The example imports this package from its sources (`../src/index.js`), so no build is needed; a real application imports it from `nestjs-nats-memory`. [`example.test.ts`](./example.test.ts) runs the same flow against both transports. [`app.integration.test.ts`](./app.integration.test.ts) shows how to test an application wired for NATS without a NATS server: it replaces the NATS client and microservice with in-memory ones and tests each controller.
 
 The scripts pass `--disable-warning=DEP0205` because jiti's loader (`jiti/register`) still uses `module.register()`, which Node deprecated in favor of `module.registerHooks()`. Remove the flag once jiti switches.
 
